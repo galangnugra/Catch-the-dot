@@ -1,35 +1,75 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Game 2D Web</title>
-  <link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch The Coin</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <div id="start-menu" class="card">
-    <h2>Daftar Pemain</h2>
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="tel" id="wa" placeholder="Nomor WA" required>
-    <button onclick="startGame()">Mulai Bermain</button>
-  </div>
+    <div class="container">
 
-  <div id="game-container" style="display: none;">
-    <div id="ui">Score: <span id="score">0</span></div>
-    <canvas id="gameCanvas" width="400" height="400"></canvas>
-  </div>
+        <!-- MENU AWAL -->
+        <section id="menu" class="screen">
+            <h1>🪙 Catch The Coin</h1>
+            <p>kumpulkan koin sebanyak mungkin!</p>
 
-  <div id="game-over-menu" class="card" style="display: none;">
-    <h2>Game Over!</h2>
-    <p>Skor Akhir: <span id="final-score">0</span></p>
-    
-    <h3>10 Leaderboard Teratas</h3>
-    <ol id="leaderboard-list"></ol>
-    
-    <button onclick="restartGame()">Main Lagi</button>
-  </div>
+            <input type="text" id="username" placeholder="Masukkan username">
+            <input type="tel" id="wa" placeholder="Nomor WhatsApp">
 
-  <script src="script.js"></script>
+            <button onclick="startGame()">MULAI BERMAIN</button>
+            <button class="secondary" onclick="showLeaderboard()">
+                LEADERBOARD
+            </button>
+
+            <p id="error"></p>
+        </section>
+
+        <!-- GAME -->
+        <section id="game" class="screen hidden">
+            <div class="info">
+                <span>👤 <b id="playerName"></b></span>
+                <span>⭐ Skor: <b id="score">0</b></span>
+                <span>⏱️ Waktu: <b id="time">30</b></span>
+            </div>
+
+            <div id="gameArea">
+                <button id="coin" onclick="collectCoin()">🪙</button>
+            </div>
+
+            <button class="secondary" onclick="backToMenu()">
+                KEMBALI
+            </button>
+        </section>
+
+        <!-- LEADERBOARD -->
+        <section id="leaderboard" class="screen hidden">
+            <h1>🏆 Leaderboard</h1>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Username</th>
+                        <th>Skor</th>
+                    </tr>
+                </thead>
+
+                <tbody id="leaderboardBody">
+                    <tr>
+                        <td colspan="3">Memuat data...</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <button class="secondary" onclick="backToMenu()">
+                KEMBALI
+            </button>
+        </section>
+
+    </div>
+
+    <script src="script.js"></script>
 </body>
 </html>
