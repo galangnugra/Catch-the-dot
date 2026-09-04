@@ -1,134 +1,194 @@
-const SCRIPT_URL = "URL_SCRIPT_GOOGLE_ANDA";
+// GANTI DENGAN URL GOOGLE APPS SCRIPT KAMU
+const API_URL = "MASUKKAN_URL_APPS_SCRIPT_DI_SINI";
 
-let canvas = document.getElementById("gameCanvas");
-let ctx = canvas.getContext("2d");
-
-let player = { x: 180, y: 350, size: 20, speed: 5 };
-let target = { x: 0, y: 0, size: 15 };
+let username = "";
+let nomorWA = "";
 let score = 0;
-let gameOver = false;
-let gameInterval;
-let userData = { username: "", wa: "" };
+let timeLeft = 30;
+let timer;
 
-// Kontrol Keyboard
-let keys = {};
-window.addEventListener("keydown", (e) => keys[e.key] = true);
-window.addEventListener("keyup", (e) => keys[e.key] = false);
+// ==========================
+// MENU → GAME
+// ==========================
 
 function startGame() {
-  const username = document.getElementById("username").value;
-  const wa = document.getElementById("wa").value;
 
-  if (!username || !wa) {
-    alert("Isi username dan nomor WA terlebih dahulu!");
-    return;
-  }
+    username = document.getElementById("username").value.trim();
+    nomorWA = document.getElementById("wa").value.trim();
 
-  userData = { username, wa };
-  document.getElementById("start-menu").style.display = "none";
-  document.getElementById("game-container").style.display = "block";
+    if (username === "" || nomorWA === "") {
+        document.getElementById("error").textContent =
+            "Username dan nomor WhatsApp wajib diisi!";
+        return;
+    }
 
-  resetGameData();
-  spawnTarget();
-  gameInterval = setInterval(updateGame, 1000 / 60); // 60 FPS
+    score = 0;
+    timeLeft = 30;
+
+    document.getElementById("playerName").textContent = username;
+    document.getElementById("score").textContent = score;
+    document.getElementById("time").textContent = timeLeft;
+
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("leaderboard").classList.add("hidden");
+    document.getElementById("game").classList.remove("hidden");
+
+    moveCoin();
+
+    clearInterval(timer);
+
+    timer = setInterval(() => {
+
+        timeLeft--;
+
+        document.getElementById("time").textContent = timeLeft;
+
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            endGame();
+        }
+
+    }, 1000);
 }
 
-function resetGameData() {
-  score = 0;
-  gameOver = false;
-  player.x = 180;
-  player.y = 350;
-  document.getElementById("score").innerText = score;
+// ==========================
+// KLIK KOIN
+// ==========================
+
+function collectCoin() {
+
+    if (timeLeft <= 0) return;
+
+    score++;
+
+    document.getElementById("score").textContent = score;
+
+    moveCoin();
 }
 
-function spawnTarget() {
-  target.x = Math.random() * (canvas.width - target.size);
-  target.y = Math.random() * (canvas.height - target.size);
+// ==========================
+// PINDAHKAN KOIN
+// ==========================
+
+function moveCoin() {
+
+    const gameArea = document.getElementById("gameArea");
+    const coin = document.getElementById("coin");
+
+    const maxX = gameArea.clientWidth - coin.offsetWidth;
+    const maxY = gameArea.clientHeight - coin.offsetHeight;
+
+    const x = Math.random() * maxX;
+    const y = Math.random() * maxY;
+
+    coin.style.left = `${x}px`;
+    coin.style.top = `${y}px`;
 }
 
-function updateGame() {
-  if (gameOver) return;
+// ==========================
+// GAME SELESAI
+// ==========================
 
-  // Gerakan Player
-  if (keys["ArrowLeft"] && player.x > 0) player.x -= player.speed;
-  if (keys["ArrowRight"] && player.x < canvas.width - player.size) player.x += player.speed;
-  if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
-  if (keys["ArrowDown"] && player.y < canvas.height - player.size) player.y += player.speed;
+async function endGame() {
 
-  // Deteksi Tabrakan
-  if (
-    player.x < target.x + target.size &&
-    player.x + player.size > target.x &&
-    player.y < target.y + target.size &&
-    player.y + player.size > target.y
-  ) {
-    score += 10;
-    document.getElementById("score").innerText = score;
-    spawnTarget();
-  }
+    alert(`Game selesai!\nSkor kamu: ${score}`);
 
-  draw();
+    await saveScore();
+
+    showLeaderboard();
 }
 
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+// ==========================
+// SIMPAN DATA
+// GOOGLE SHEETS
+// ==========================
 
-  // Gambar Player (Biru Muda)
-  ctx.fillStyle = "#4ecca3";
-  ctx.fillRect(player.x, player.y, player.size, player.size);
+async function saveScore() {
 
-  // Gambar Target (Merah)
-  ctx.fillStyle = "#e94560";
-  ctx.fillRect(target.x, target.y, target.size, target.size);
+    try {
+
+        await fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                username: username,
+                whatsapp: nomorWA,
+                score: score
+            })
+        });
+
+    } catch (error) {
+
+        console.error("Gagal menyimpan data:", error);
+
+    }
 }
 
-// Simulasi Selesai Main setelah 15 Detik
-setTimeout(() => {
-  // Untuk keperluan testing, jalankan fungsi endGame saat dipicu
-}, 15000);
+// ==========================
+// LEADERBOARD
+// ==========================
 
-function endGame() {
-  gameOver = true;
-  clearInterval(gameInterval);
-  document.getElementById("game-container").style.display = "none";
-  document.getElementById("game-over-menu").style.display = "block";
-  document.getElementById("final-score").innerText = score;
+async function showLeaderboard() {
 
-  kirimDataDanFetchLeaderboard();
+    document.getElementById("menu").classList.add("hidden");
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("leaderboard").classList.remove("hidden");
+
+    const tbody = document.getElementById("leaderboardBody");
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="3">Memuat data...</td>
+        </tr>
+    `;
+
+    try {
+
+        const response = await fetch(API_URL);
+        const data = await response.json();
+
+        data.sort((a, b) => Number(b.score) - Number(a.score));
+
+        tbody.innerHTML = "";
+
+        data.slice(0, 10).forEach((player, index) => {
+
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${player.username}</td>
+                <td>${player.score}</td>
+            `;
+
+            tbody.appendChild(row);
+
+        });
+
+    } catch (error) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="3">Gagal mengambil leaderboard</td>
+            </tr>
+        `;
+
+        console.error(error);
+    }
 }
 
-function kirimDataDanFetchLeaderboard() {
-  const payload = {
-    username: userData.username,
-    wa: userData.wa,
-    score: score
-  };
+// ==========================
+// KEMBALI KE MENU
+// ==========================
 
-  // Kirim data ke Google Sheets
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    body: JSON.stringify(payload)
-  })
-  .then(() => fetchLeaderboard())
-  .catch(err => console.error("Error mengirim data:", err));
-}
+function backToMenu() {
 
-function fetchLeaderboard() {
-  fetch(SCRIPT_URL)
-    .then(res => res.json())
-    .then(data => {
-      let listHTML = "";
-      data.forEach(item => {
-        listHTML += `<li>${item[0]} - ${item[2]} Poin</li>`;
-      });
-      document.getElementById("leaderboard-list").innerHTML = listHTML;
-    });
-}
+    clearInterval(timer);
 
-function restartGame() {
-  document.getElementById("game-over-menu").style.display = "none";
-  document.getElementById("game-container").style.display = "block";
-  resetGameData();
-  spawnTarget();
-  gameInterval = setInterval(updateGame, 1000 / 60);
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("leaderboard").classList.add("hidden");
+    document.getElementById("menu").classList.remove("hidden");
 }
